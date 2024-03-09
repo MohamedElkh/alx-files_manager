@@ -1,32 +1,37 @@
 const sha1 = require('sha1');
 
 export const pwdHashed = (pwd) => sha1(pwd);
+
 export const getAuthzHeader = (req) => {
-  const header = req.headers.authorization;
-  if (!header) {
+  const hd = req.headers.authorization;
+
+  if (!hd) {
     return null;
   }
-  return header;
+  return hd;
 };
 
 export const getToken = (authzHeader) => {
-  const tokenType = authzHeader.substring(0, 6);
-  if (tokenType !== 'Basic ') {
+  const tkType = authzHeader.substring(0, 6);
+
+  if (tkType !== 'Basic ') {
     return null;
   }
   return authzHeader.substring(6);
 };
 
 export const decodeToken = (token) => {
-  const decodedToken = Buffer.from(token, 'base64').toString('utf8');
-  if (!decodedToken.includes(':')) {
+  const dcToken = Buffer.from(token, 'base64').toString('utf8');
+
+  if (!dcToken.includes(':')) {
     return null;
   }
-  return decodedToken;
+  return dcToken;
 };
 
 export const getCredentials = (decodedToken) => {
-  const [email, password] = decodedToken.split(':');
+  const [email, password] = dcToken.split(':');
+
   if (!email || !password) {
     return null;
   }
