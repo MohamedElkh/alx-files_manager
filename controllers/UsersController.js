@@ -27,6 +27,7 @@ class UsersController {
         res.status(400).json({ error: 'Already exist' });
       } else {
         const hashedPassword = sha1(password);
+
         users.insertOne(
           {
             email,
@@ -34,6 +35,7 @@ class UsersController {
           },
         ).then((result) => {
           res.status(201).json({ id: result.insertedId, email });
+
           userQueue.add({ userId: result.insertedId });
         }).catch((error) => console.log(error));
       }
@@ -41,8 +43,9 @@ class UsersController {
   }
 
   static async getMe(req, res) {
-    const token = req.header('X-Token');
-    const key = `auth_${token}`;
+    const tokenx = req.header('X-Token');
+    const key = `auth_${tokenx}`;
+
     const userId = await redisClient.get(key);
 
     if (userId) {
@@ -58,6 +61,7 @@ class UsersController {
       });
     } else {
       console.log('Hupatikani!');
+
       res.status(401).json({ error: 'Unauthorized' });
     }
   }
