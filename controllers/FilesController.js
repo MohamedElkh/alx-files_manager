@@ -139,6 +139,7 @@ class FilesController {
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+
     const fileId = req.params.id;
     const files = dbClient.db.collection('files');
 
@@ -161,6 +162,7 @@ class FilesController {
       parentId,
       page,
     } = req.query;
+
     const pageNum = page || 0;
     const files = dbClient.db.collection('files');
 
@@ -208,6 +210,7 @@ class FilesController {
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+
     const { id } = req.params;
     const files = dbClient.db.collection('files');
 
@@ -268,6 +271,7 @@ class FilesController {
           if (size) {
             fileName = `${file.localPath}_${size}`;
           }
+
           const data = await fs.readFile(fileName);
           const contentType = mime.contentType(file.name);
 
