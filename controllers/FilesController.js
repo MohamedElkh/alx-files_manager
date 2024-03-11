@@ -11,14 +11,15 @@ const fileQueue = new Queue('fileQueue', 'redis://127.0.0.1:6379');
 class FilesController {
   static async getUser(req) {
     const token = req.header('X-Token');
-    const key = `auth_${token}`;
+    const keyx = `auth_${token}`;
 
-    const userId = await redisClient.get(key);
+    const userId = await redisClient.get(keyx);
+
     if (userId) {
       const users = dbClient.db.collection('users');
-      const idObject = new ObjectID(userId);
+      const idObj = new ObjectID(userId);
 
-      const user = await users.findOne({ _id: idObject });
+      const user = await users.findOne({ _id: idObj });
 
       if (!user) {
         return null;
@@ -55,8 +56,8 @@ class FilesController {
     const files = dbClient.db.collection('files');
 
     if (parentId) {
-      const idObject = new ObjectID(parentId);
-      const file = await files.findOne({ _id: idObject, userId: user._id });
+      const idObj = new ObjectID(parentId);
+      const file = await files.findOne({ _id: idObj, userId: user._id });
 
       if (!file) {
         return res.status(400).json({ error: 'Parent not found' });
@@ -85,18 +86,18 @@ class FilesController {
         console.log(error);
       });
     } else {
-      const filePath = process.env.FOLDER_PATH || '/tmp/files_manager';
-      const fileName = `${filePath}/${uuidv4()}`;
+      const filePth = process.env.FOLDER_PATH || '/tmp/files_manager';
+      const fileN = `${filePth}/${uuidv4()}`;
 
-      const buff = Buffer.from(data, 'base64');
+      const buffx = Buffer.from(data, 'base64');
       // const storeThis = buff.toString('utf-8');
       try {
         try {
-          await fs.mkdir(filePath);
+          await fs.mkdir(filePth);
         } catch (error) {
         // pass. Error raised when file already exists
         }
-        await fs.writeFile(fileName, buff, 'utf-8');
+        await fs.writeFile(fileN, buffx, 'utf-8');
       } catch (error) {
         console.log(error);
       }
@@ -107,7 +108,7 @@ class FilesController {
           type,
           isPublic,
           parentId: parentId || 0,
-          localPath: fileName,
+          localPath: fileN,
         },
       ).then((result) => {
         res.status(201).json(
@@ -143,8 +144,8 @@ class FilesController {
     const fileId = req.params.id;
     const files = dbClient.db.collection('files');
 
-    const idObject = new ObjectID(fileId);
-    const file = await files.findOne({ _id: idObject, userId: user._id });
+    const idObj = new ObjectID(fileId);
+    const file = await files.findOne({ _id: idObj, userId: user._id });
 
     if (!file) {
       return res.status(404).json({ error: 'Not found' });
@@ -163,7 +164,7 @@ class FilesController {
       page,
     } = req.query;
 
-    const pageNum = page || 0;
+    const pageN = page || 0;
     const files = dbClient.db.collection('files');
 
     let query;
@@ -178,8 +179,8 @@ class FilesController {
         { $sort: { _id: -1 } },
         {
           $facet: {
-            metadata: [{ $count: 'total' }, { $addFields: { page: parseInt(pageNum, 10) } }],
-            data: [{ $skip: 20 * parseInt(pageNum, 10) }, { $limit: 20 }],
+            metadata: [{ $count: 'total' }, { $addFields: { page: parseInt(pageN, 10) } }],
+            data: [{ $skip: 20 * parseInt(pageN, 10) }, { $limit: 20 }],
           },
         },
       ],
@@ -214,11 +215,11 @@ class FilesController {
     const { id } = req.params;
     const files = dbClient.db.collection('files');
 
-    const idObject = new ObjectID(id);
-    const newValue = { $set: { isPublic: true } };
+    const idObj = new ObjectID(id);
+    const newVal = { $set: { isPublic: true } };
 
     const options = { returnOriginal: false };
-    files.findOneAndUpdate({ _id: idObject, userId: user._id }, newValue, options, (err, file) => {
+    files.findOneAndUpdate({ _id: idObj, userId: user._id }, newVal, options, (err, file) => {
       if (!file.lastErrorObject.updatedExisting) {
         return res.status(404).json({ error: 'Not found' });
       }
@@ -236,11 +237,12 @@ class FilesController {
     const { id } = req.params;
     const files = dbClient.db.collection('files');
 
-    const idObject = new ObjectID(id);
-    const newValue = { $set: { isPublic: false } };
+    const idObj = new ObjectID(id);
+    const newVal = { $set: { isPublic: false } };
+
     const options = { returnOriginal: false };
 
-    files.findOneAndUpdate({ _id: idObject, userId: user._id }, newValue, options, (err, file) => {
+    files.findOneAndUpdate({ _id: idObj, userId: user._id }, newVal, options, (err, file) => {
       if (!file.lastErrorObject.updatedExisting) {
         return res.status(404).json({ error: 'Not found' });
       }
@@ -253,26 +255,27 @@ class FilesController {
     const { id } = req.params;
 
     const files = dbClient.db.collection('files');
-    const idObject = new ObjectID(id);
+    const idObj = new ObjectID(id);
 
-    files.findOne({ _id: idObject }, async (err, file) => {
+    files.findOne({ _id: idObj }, async (err, file) => {
       if (!file) {
         return res.status(404).json({ error: 'Not found' });
       }
       console.log(file.localPath);
+
       if (file.isPublic) {
         if (file.type === 'folder') {
           return res.status(400).json({ error: "A folder doesn't have content" });
         }
         try {
-          let fileName = file.localPath;
+          let fileN = file.localPath;
           const size = req.param('size');
 
           if (size) {
-            fileName = `${file.localPath}_${size}`;
+            fileN = `${file.localPath}_${size}`;
           }
 
-          const data = await fs.readFile(fileName);
+          const data = await fs.readFile(fileN);
           const contentType = mime.contentType(file.name);
 
           return res.header('Content-Type', contentType).status(200).send(data);
@@ -291,15 +294,15 @@ class FilesController {
             return res.status(400).json({ error: "A folder doesn't have content" });
           }
           try {
-            let fileName = file.localPath;
+            let fileN = file.localPath;
             const size = req.param('size');
 
             if (size) {
-              fileName = `${file.localPath}_${size}`;
+              fileN = `${file.localPath}_${size}`;
             }
             const contentType = mime.contentType(file.name);
 
-            return res.header('Content-Type', contentType).status(200).sendFile(fileName);
+            return res.header('Content-Type', contentType).status(200).sendFile(fileN);
           } catch (error) {
             console.log(error);
             return res.status(404).json({ error: 'Not found' });
